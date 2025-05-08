@@ -1,0 +1,9 @@
+---
+name: modules
+version: master
+
+asciidoc:
+  attributes:
+    lab_name: "Deploying containers using Container Tools [podman]"
+    release-version: master
+    page-pagination: true

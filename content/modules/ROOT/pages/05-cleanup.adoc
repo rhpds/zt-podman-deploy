@@ -1,0 +1,18 @@
+Unlike interactive containers, detached containers are stopped using
+*podman stop *.
+
+[source,bash,run]
+----
+podman stop $(podman ps -a | grep Up | cut -d" " -f1)
+----
+
+In the command above, we use a bit of bash scripting to determine the
+*CONTAINER ID* as it is going to be a value unique to each container
+image.
+
+You can verify that the container is now exited:
+
+[source,bash,run]
+----
+podman ps -a
+----

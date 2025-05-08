@@ -1,0 +1,24 @@
+---
+antora:
+  name: modules
+  dir: www
+  modules:
+    - name: "01-introduction"
+      label: "Introduction"
+      solveButton: true
+    - name: "02-deploy-image"
+      label: "Deploy Image"
+      solveButton: true
+    - name: "03-administer"
+      label: "Administer"
+      solveButton: true
+    - name: "04-deploy-detached"
+      label: "Deploy Detached"
+      solveButton: true
+    - name: "05-cleanup"
+      label: "Cleanup"
+      solveButton: true
+
+tabs:
+  - name: ">_ terminal"
+    url: /wetty
