@@ -3,7 +3,7 @@ In this lab we have two terminals to make navigation easier. The
 `+RHEL Host+` tab will be used for host related tasks.
 
 .nav tabs
-image::../assets/navtabs.png[nav tabs]
+image::navtabs.png[nav tabs]
 
 Click on the `+Podman+` tab.
 
