@@ -19,7 +19,7 @@ Notice the *STATUS* field is now reported as Exited.
 image::exited-container.png[]
 
 A container in this state can be resumed, however, this one will no
-longer be used. You will remove it from the system. using *podman rm *.
+longer be used. You will remove it from the system. using *podman rm*.
 In the command below, we use a bit of bash scripting to determine the
 CONTAINER ID as it is unique to each container image.
 

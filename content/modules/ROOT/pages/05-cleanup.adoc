@@ -16,3 +16,5 @@ You can verify that the container is now exited:
 ----
 podman ps -a
 ----
+
+image::stopped.png[]

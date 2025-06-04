@@ -9,19 +9,25 @@ configure port forwarding for the Apache web server so that connections
 to the host’s port 8081 will redirect to the running container’s port 80
 (Apache service).
 
-Run the following command in the `+Podman+` tab.
+Run the following command in the #*top terminal*#.
 
 [source,bash,run]
 ----
 podman run -dt -p 8081:80/tcp rhel9-httpd
 ----
 
-You can verify the state of the container using *podman ps*
+Here's the corresponding output.
+
+image::detached-output.png[]
+
+You can verify the state of the container by running *podman ps* in the top terminal.
 
 [source,bash,run]
 ----
 podman ps -a
 ----
+
+image::check-running-detached.png[]
 
 Observe that the *STATUS* is *Up* and there is a new section in the
 output *PORTS* that indicates the port forwarding defined for the
@@ -37,5 +43,4 @@ curl localhost:8081
 This should now display the Apache test page, being served by the httpd
 daemon running in the container.
 
-.apache
-image::../assets/apache.png[apache]
+image::apache.png[apache]
