@@ -1,13 +1,18 @@
-In this lab we have two terminals to make navigation easier. The
-`+Podman+` terminal will be used for podman related tasks. The
-`+RHEL Host+` tab will be used for host related tasks.
+In this lab the terminal is divided into two terminals to make navigation easier.
 
-.nav tabs
-image::navtabs.png[nav tabs]
+IMPORTANT:
+We'll use the top half for podman related tasks. We'll use the bottom half for RHEL host related tasks.
 
-Click on the `+Podman+` tab.
+image::terminal-split.png[]
 
-Enter the following command to view the existing images on the RHEL
+In the top terminal, run the following command.
+
+[source,bash,run]
+----
+sudo -i
+----
+
+In the top terminal, enter the following command to view the existing images on the RHEL
 host.
 
 [source,bash,run]
