@@ -22,5 +22,6 @@ antora:
 tabs:
   - name: "RHEL Terminal"
     url: /wetty
+    secondary_url: /wetty
   - name: "Podman Terminal"
     url: /wetty
