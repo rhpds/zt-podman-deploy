@@ -1,6 +1,6 @@
 The *rhel9-httpd* container includes a bash shell. In this step, you
 will deploy the container in an interactive fashion, which will allow
-you to run commands within the deployed container. In the `+Podman+` tab
+you to run commands within the deployed container. In the #top terminal#
 run the following:
 
 [source,bash,run]
