@@ -1,7 +1,6 @@
 In this lab the terminal is divided into two terminals to make navigation easier.
 
-IMPORTANT:
-We'll use the top half for podman related tasks. We'll use the bottom half for RHEL host related tasks.
+IMPORTANT: We'll use the top half for podman related tasks. We'll use the bottom half for RHEL host related tasks.
 
 image::terminal-split.png[]
 
@@ -21,7 +20,11 @@ podman images
 ----
 
 There is one container available in the local (localhost) repository,
-*rhel9-httpd*. If there were multiple updated iterations of the
+*rhel9-httpd*.
+
+image::httpd-image.png[]
+
+If there were multiple updated iterations of the
 conatiner available, you would use the *IMAGE ID* to work with those
 that are not tagged as *latest*. Also, from this list you are able to
 see the size, on disk, of the container image.
