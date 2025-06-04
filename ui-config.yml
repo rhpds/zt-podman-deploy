@@ -20,8 +20,6 @@ antora:
       solveButton: true
 
 tabs:
-  - name: "RHEL Terminal"
+  - name: "Terminal"
     url: /wetty
     secondary_url: /wetty
-  - name: "Podman Terminal"
-    url: /wetty
