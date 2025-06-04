@@ -1,4 +1,4 @@
-Switch back to the `+Podman+` tab. Exit the container’s shell
+In the #*top terminal*#, exit the container’s shell.
 
 [source,bash,run]
 ----
@@ -7,7 +7,7 @@ exit
 
 When the process on an interactive container is closed, the container
 stops running. You can verify this by looking at the list of container
-processes:
+processes.
 
 [source,bash,run]
 ----
@@ -15,6 +15,8 @@ podman ps -a
 ----
 
 Notice the *STATUS* field is now reported as Exited.
+
+image::exited-container.png[]
 
 A container in this state can be resumed, however, this one will no
 longer be used. You will remove it from the system. using *podman rm *.
@@ -28,3 +30,5 @@ podman rm $(podman ps -a | grep Exited | cut -d" " -f1)
 
 The output of this removal is the full CONTAINER ID which was removed
 from the system.
+
+image::removed-container.png[]
