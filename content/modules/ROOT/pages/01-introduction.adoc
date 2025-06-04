@@ -1,6 +1,7 @@
 In this lab the terminal is divided into two terminals to make navigation easier.
 
 IMPORTANT: We'll use the top half for podman related tasks. We'll use the bottom half for RHEL host related tasks.
+
 image::terminal-split.png[]
 
 In the top terminal, run the following command.
