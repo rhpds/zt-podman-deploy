@@ -9,7 +9,8 @@ newcontainer=$(buildah from scratch)
 scratchmnt=$(buildah mount ${newcontainer})
 
 # install the packages
-yum install --installroot ${scratchmnt} httpd --releasever 9 --setopt=module_platform_id="platform:el9" -y
+# yum install --installroot ${scratchmnt} httpd --releasever 9 --setopt=module_platform_id="platform:el9" -y
+yum install --installroot ${scratchmnt} httpd -y
 
 # Clean up yum cache
 if [ -d "${scratchmnt}" ]; then
