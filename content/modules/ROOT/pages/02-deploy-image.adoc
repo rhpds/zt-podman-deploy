@@ -1,11 +1,11 @@
-The *rhel9-httpd* container includes a bash shell. In this step, you
+The *rhel10-httpd* container includes a bash shell. In this step, you
 will deploy the container in an interactive fashion, which will allow
 you to run commands within the deployed container. In the #*top terminal*#
 run the following:
 
 [source,bash,run]
 ----
-podman run -it rhel9-httpd /bin/bash
+podman run -it rhel10-httpd /bin/bash
 ----
 
 You should now be looking at a generic bash shell prompt.

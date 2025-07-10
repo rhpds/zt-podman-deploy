@@ -2,7 +2,7 @@ Running an interactive container is all well and good, however, if the
 container is offering applications or services, you do not need to
 interact with it.
 
-The *rhel9-httpd* container, for example, is configured with an Apache
+The *rhel10-httpd* container, for example, is configured with an Apache
 web server running within it. You will create a new instance of this
 container in a detached mode. Further, the command provided will
 configure port forwarding for the Apache web server so that connections
@@ -13,7 +13,7 @@ Run the following command in the #*top terminal*#.
 
 [source,bash,run]
 ----
-podman run -dt -p 8081:80/tcp rhel9-httpd
+podman run -dt -p 8081:80/tcp rhel10-httpd
 ----
 
 Here's the corresponding output.

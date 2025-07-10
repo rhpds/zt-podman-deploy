@@ -20,7 +20,7 @@ podman images
 ----
 
 There is one container available in the local (localhost) repository,
-*rhel9-httpd*.
+*rhel10-httpd*.
 
 image::httpd-image.png[]
 
