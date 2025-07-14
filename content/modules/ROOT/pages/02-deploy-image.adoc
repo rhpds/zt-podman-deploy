@@ -28,9 +28,9 @@ runtime of the container image (overlay).
 image::file-system.png[]
 
 Switch to the #*bottom terminal*#. Use this terminal to verify that the
-container is running:
+container is running, by pasting in the following command:
 
-[source,bash,run]
+[source,bash]
 ----
 sudo podman ps -a
 ----
