@@ -44,11 +44,17 @@
       dest: "/tmp/setup-scripts/setup-{{ ansible_host }}.sh"
     register: r_result
 
+  - name: Include secrets var
+    include_vars: ../config/secrets.yaml
+
   - name: Execute module_stage-host.sh if it exists
     when: r_script_test.stat.exists
     shell: "sh -x /tmp/setup-scripts/setup-{{ ansible_host }}.sh > /tmp/setup-scripts/setup-{{ ansible_host }}.log 2>&1"
     become: true
     register: r_result
+    environment:
+      ACTIVATION_KEY: "{{ rhelbu_activation_key }}"
+      ORG_ID: "{{ rhelbu_org_id }}"
 
   - name: Output script result
     ansible.builtin.debug:
