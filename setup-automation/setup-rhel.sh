@@ -2,6 +2,9 @@
 set -x
 trap 'echo "FATAL: setup failed at line ${LINENO}" >> /tmp/progress.log; exit 1' ERR
 
+echo "Adding wheel" > /root/post-run.log
+usermod -aG wheel rhel
+
 echo "Setup zt-podman-deploy" > /tmp/progress.log
 chmod 666 /tmp/progress.log
 
