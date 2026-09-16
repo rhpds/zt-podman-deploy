@@ -4,4 +4,7 @@ egress:
   - ports:
       - protocol: TCP
         port: 443
-
+ingress:
+  - ports:
+      - protocol: TCP
+        port: 8000

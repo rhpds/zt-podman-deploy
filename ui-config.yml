@@ -3,20 +3,14 @@ antora:
   name: modules
   dir: www
   modules:
-    - name: "01-introduction"
-      label: "Introduction"
+    - name: "module-01"
+      label: "Operation"
       solveButton: true
-    - name: "02-deploy-image"
-      label: "Deploy Image"
+    - name: "module-02"
+      label: "Observation"
       solveButton: true
-    - name: "03-administer"
-      label: "Administer"
-      solveButton: true
-    - name: "04-deploy-detached"
-      label: "Deploy Detached"
-      solveButton: true
-    - name: "05-cleanup"
-      label: "Cleanup"
+    - name: "module-03"
+      label: "Configuration"
       solveButton: true
 
 tabs:

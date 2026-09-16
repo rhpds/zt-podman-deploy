@@ -11,3 +11,16 @@ virtualmachines:
         value: "bastions"
     networks:
       - default
+    services:
+      - name: hostinfo
+        ports:
+          - port: 8000
+            protocol: TCP
+            targetPort: 8000
+            name: hostinfo
+    routes:
+      - name: hostinfo
+        host: hostinfo
+        service: hostinfo
+        targetPort: 8000
+        tls: false

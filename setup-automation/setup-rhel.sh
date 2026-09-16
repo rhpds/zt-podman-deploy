@@ -1,26 +1,41 @@
 #!/bin/bash
+set -x
+trap 'echo "FATAL: setup failed at line ${LINENO}" >> /tmp/progress.log; exit 1' ERR
 
-set -ex
+echo "Setup zt-podman-deploy" > /tmp/progress.log
+chmod 666 /tmp/progress.log
 
-# start new container from scratch
-newcontainer=$(buildah from scratch)
-scratchmnt=$(buildah mount ${newcontainer})
+dnf -y remove katello-ca-consumer-* 2>/dev/null || true
+subscription-manager clean
+subscription-manager register --activationkey="${ACTIVATION_KEY}" --org="${ORG_ID}" --force
+dnf install -y git podman skopeo
 
-# install the packages
-dnf install -y --releasever=10 --installroot=$scratchmnt redhat-release
-dnf install -y --setopt=reposdir=/etc/yum.repos.d \
-      --installroot=$scratchmnt \
-      --setopt=cachedir=/var/cache/dnf httpd
+LIBDIR=/tmp/lab-lib-$$
+git clone --depth=1 https://github.com/rhel-labs/lab-setup "${LIBDIR}"
+. "${LIBDIR}/common.sh"
 
-# Clean up yum cache
-if [ -d "${scratchmnt}" ]; then
-  rm -rf "${scratchmnt}"/var/cache/yum
-fi
+echo "Packages installed" >> /tmp/progress.log
 
-# configure container label and entrypoint
-buildah config --label name=rhel10-httpd ${newcontainer}
-buildah config --port 80 --cmd "/usr/sbin/httpd -DFOREGROUND" ${newcontainer}
+# --- lab configuration ---
+REGISTRY_HOST="registry-${GUID}.${DOMAIN}"
+# -------------------------
 
-# commit the image
-buildah unmount ${newcontainer}
-buildah commit ${newcontainer} rhel10-httpd
+setup_ssl_registry "${REGISTRY_HOST}"
+echo "Registry up at ${REGISTRY_HOST}" >> /tmp/progress.log
+
+# Mirror hostinfo-app to local registry — students pull from here in Module 1
+IMAGE_TGT="hostinfo-app:latest"
+skopeo copy \
+    docker://ghcr.io/rhel-labs/"${IMAGE_TGT}" \
+    docker://"${REGISTRY_HOST}/${IMAGE_TGT}"
+
+echo "${IMAGE_TGT} mirrored to local registry" >> /tmp/progress.log
+
+add_local_host "${REGISTRY_HOST}"
+
+persist_env_var REGISTRY "${REGISTRY_HOST}"
+
+cleanup_subscription
+cleanup_certbot
+cleanup_tmpfiles
+echo "Setup complete" >> /tmp/progress.log

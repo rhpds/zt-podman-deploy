@@ -1,0 +1,132 @@
+= Running the Application
+
+The container you explored in the basics lab was isolated by default — no network access from the host, no way to reach what was running inside. That isolation is intentional. Turning a container into a running service means making the first deliberate exception: publishing a port.
+
+== Pull the Image
+
+Pull `hostinfo-app` from the local registry:
+
+[source,bash,role=execute]
+----
+podman pull ${REGISTRY}/hostinfo-app
+----
+
+== Confirm the Port
+
+Before running the application, confirm what port the image expects to be reached on:
+
+[source,bash,role=execute]
+----
+podman inspect ${REGISTRY}/hostinfo-app | grep -A2 ExposedPorts
+----
+
+[source,text]
+----
+        "ExposedPorts": {
+            "8000/tcp": {}
+        },
+----
+
+The image declares port 8000. Without explicitly publishing it, that declaration is inert — the container runs but nothing on the host can reach it.
+
+== Run the Application
+
+[source,bash,role=execute]
+----
+podman run -d -p 8000:8000 --name hostinfo ${REGISTRY}/hostinfo-app
+----
+
+The flags:
+
+* `-d` — detached: run in the background
+* `-p 8000:8000` — publish port, format: `host_port:container_port`
+* `--name hostinfo` — assign a name for service management
+
+[source,bash,role=execute]
+----
+podman ps
+----
+
+[source,text]
+----
+CONTAINER ID  IMAGE                              COMMAND               CREATED        STATUS        PORTS                   NAMES
+a1b2c3d4e5f6  registry-xxx.example.com/hostinfo-app:latest  /app/venv/bin/gu...  3 seconds ago  Up 3 seconds  0.0.0.0:8000->8000/tcp  hostinfo
+----
+
+The PORTS column shows `0.0.0.0:8000->8000/tcp`. Traffic arriving on the host at port 8000 is forwarded into the container's port 8000 — through the isolation boundary you just opened.
+
+== Access the Application
+
+Open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] in your browser. It shows the container's hostname (the container ID), the container OS, and the Python packages from its default configuration.
+
+// TODO: image::web-tab-hostinfo-default.png[hostinfo-app running with default configuration]
+
+The PORTS column in `podman ps` already confirmed the mapping is in place — the browser confirms the application is actually serving through it.
+
+== Container Lifecycle
+
+This container is running a service, not a one-off task. You can stop and restart it without removing it:
+
+[source,bash,role=execute]
+----
+podman stop hostinfo
+----
+
+[source,bash,role=execute]
+----
+podman ps -a
+----
+
+[source,text]
+----
+CONTAINER ID  IMAGE                              COMMAND               CREATED         STATUS                    PORTS  NAMES
+a1b2c3d4e5f6  registry-xxx.example.com/hostinfo-app:latest  /app/venv/bin/gu...  2 minutes ago  Exited (0) 5 seconds ago         hostinfo
+----
+
+Status is `Exited`. The container and its configuration are preserved — just not running.
+
+[source,bash,role=execute]
+----
+podman start hostinfo
+----
+
+[source,bash,role=execute]
+----
+podman ps
+----
+
+Back up. `podman start` restarts the existing container with the same settings — same name, same port mapping, same image. This is different from `podman run`, which creates a new container each time.
+
+== Remove the Container
+
+[source,bash,role=execute]
+----
+podman rm hostinfo
+----
+
+[source,text]
+----
+Error: container state improper
+----
+
+You cannot remove a running container directly. Two options:
+
+[source,bash,role=execute]
+----
+podman stop hostinfo
+podman rm hostinfo
+----
+
+Or in one step:
+
+[source,bash,role=execute]
+----
+podman rm -f hostinfo
+----
+
+[source,bash,role=execute]
+----
+podman ps -a
+----
+
+Gone. In the next module you'll run the application again and use Podman's tools to observe what it's doing.

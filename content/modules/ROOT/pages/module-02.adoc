@@ -1,0 +1,92 @@
+= Observing the Application
+
+The application is running. These tools let you see what it's doing from outside the container and interact with it without disrupting the running service.
+
+== Start the Application
+
+[source,bash,role=execute]
+----
+podman run -d -p 8000:8000 --name hostinfo ${REGISTRY}/hostinfo-app
+----
+
+== Container Logs
+
+[source,bash,role=execute]
+----
+podman logs hostinfo
+----
+
+[source,text]
+----
+[2026-08-17 19:24:01 +0000] [1] [INFO] Starting gunicorn 21.2.0
+[2026-08-17 19:24:01 +0000] [1] [INFO] Listening at: http://0.0.0.0:8000 (1)
+[2026-08-17 19:24:01 +0000] [1] [INFO] Worker booted
+[2026-08-17 19:24:01 +0000] [7] [INFO] Booted worker with pid: 7
+----
+
+This is the application's stdout and stderr — captured by Podman and accessible without entering the container. The gunicorn startup messages confirm the web server is listening on port 8000.
+
+Follow logs in real time:
+
+[source,bash,role=execute]
+----
+podman logs -f hostinfo
+----
+
+Make a request to the application in another tab or the browser. The access log entry appears. Press `Ctrl+C` to stop following.
+
+== Execute Commands in a Running Container
+
+`podman exec` runs a command inside an already-running container. The container keeps running — you are not starting a new one.
+
+Read the application's current configuration:
+
+[source,bash,role=execute]
+----
+podman exec hostinfo cat /app/config.json
+----
+
+[source,text]
+----
+{
+  "python_packages": ["flask", "gunicorn", "requests", "psutil"],
+  "system_packages": ["glibc", "openssl", "python3"]
+}
+----
+
+The two lists control what the application displays in its Web UI. `python_packages` are inspected via the Python package index inside the container; `system_packages` are looked up via the container's RPM database. This configuration is baked into the image — every new container starts with it.
+
+Get an interactive shell to explore further:
+
+[source,bash,role=execute]
+----
+podman exec -it hostinfo /bin/bash
+----
+
+Unlike `podman run -it`, this shell is inside the already-running container — the same filesystem state, the same running application. Look at what the application is made of:
+
+[source,bash,role=execute]
+----
+ls /app
+----
+
+[source,bash,role=execute]
+----
+ls /app/venv/bin
+----
+
+Exit:
+
+[source,bash,role=execute]
+----
+exit
+----
+
+[source,bash,role=execute]
+----
+podman ps
+----
+
+The container is still running. `exec` did not affect its lifecycle.
+
+In the next module you'll replace the default `config.json` with a custom one injected from the host.
