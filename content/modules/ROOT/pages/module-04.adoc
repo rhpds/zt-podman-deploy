@@ -1,6 +1,12 @@
 = The Host View
 
-Open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] and toggle to the Host View tab. The warning banner lists the resources the application needs but cannot see — they exist on the host but have not been made available inside the container. Each step in this module provides one of those resources and clears part of the warning.
+Open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] and enable the Host View using the toggle.
+
+image::host_view_toggle.png[Host View toggle control]
+
+The warning banner lists the resources the application needs but cannot see — they exist on the host but have not been made available inside the container. Each step in this module provides one of those resources and clears part of the warning.
+
+image::initial_host_details_errors.png[Host view with warning banner and missing resource indicators]
 
 == Host Hostname
 
@@ -16,7 +22,7 @@ podman run --replace -d -p 8000:8000 --name hostinfo \
 
 Open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] and check the host view. The hostname now appears and the error indicator for the missing variable clears.
 
-// TODO: image::web-tab-hostinfo-hostname.png[hostinfo-app host view showing hostname]
+image::hostname_updated.png[Host view showing hostname populated after HOST_HOSTNAME injection]
 
 == Host Operating System
 
@@ -33,9 +39,11 @@ podman run --replace -d -p 8000:8000 --name hostinfo \
 
 No `:z` here. `os-release` is a host system file — it belongs to the host, not to this container's configuration. Relabeling it would change its SELinux context on the host for every process that reads it. System files being borrowed read-only get `:ro` only.
 
-Open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] — the host OS information appears and the corresponding warning clears.
+Open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] — the host OS distribution appears and the corresponding warning clears. The package table now shows the host context but cannot yet resolve versions without the RPM database.
 
-// TODO: image::web-tab-hostinfo-os.png[hostinfo-app host view showing host OS]
+image::release_info_updated.png[Host view showing RHEL distribution after os-release mount]
+
+image::host_rpmdb_missing.png[Package table showing host context but packages not yet found]
 
 == Host Package Information
 
@@ -53,7 +61,7 @@ podman run --replace -d -p 8000:8000 --name hostinfo \
 
 Open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] — the host package list populates and the warning banner clears.
 
-// TODO: image::web-tab-hostinfo-complete.png[hostinfo-app host view fully populated]
+image::host_rpmdb_updated.png[Package table showing host packages resolved from the RPM database]
 
 == Container View and Host View
 

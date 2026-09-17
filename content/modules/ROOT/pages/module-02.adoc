@@ -114,13 +114,15 @@ A point-in-time snapshot of CPU, memory, network I/O, and block I/O. `--no-strea
 
 [source,bash,role=execute]
 ----
-podman inspect hostinfo --format '{{.NetworkSettings.Ports}}'
+podman inspect hostinfo --format '{{.Config.Env}}'
 ----
 
 [source,text]
 ----
-map[8000/tcp:[{0.0.0.0 8000}]]
+[PATH=/app/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin]
 ----
+
+The environment the container started with — only what the image defined. No custom variables have been injected yet.
 
 [source,bash,role=execute]
 ----

@@ -1,6 +1,6 @@
 = Running the Application
 
-The container you explored in the basics lab was isolated by default — no network access from the host, no way to reach what was running inside. That isolation is intentional. Turning a container into a running service means making the first deliberate exception: publishing a port.
+Containers are isolated by default — no network access from the host, no way to reach what's running inside. That isolation is intentional. Turning a container into a running service means making the first deliberate exception: publishing a port.
 
 == Pull the Image
 
