@@ -1,6 +1,6 @@
 = Observing the Application
 
-The application is running. These tools let you see what it's doing from outside the container and interact with it without disrupting the running service.
+These tools let you see what a running container is doing without disrupting it. Containers include only what the application needs — common diagnostic tools like `ps` may not be present inside. Podman provides equivalents from outside the container boundary.
 
 == Start the Application
 
@@ -8,32 +8,6 @@ The application is running. These tools let you see what it's doing from outside
 ----
 podman run -d -p 8000:8000 --name hostinfo ${REGISTRY}/hostinfo-app
 ----
-
-== Container Logs
-
-[source,bash,role=execute]
-----
-podman logs hostinfo
-----
-
-[source,text]
-----
-[2026-08-17 19:24:01 +0000] [1] [INFO] Starting gunicorn 21.2.0
-[2026-08-17 19:24:01 +0000] [1] [INFO] Listening at: http://0.0.0.0:8000 (1)
-[2026-08-17 19:24:01 +0000] [1] [INFO] Worker booted
-[2026-08-17 19:24:01 +0000] [7] [INFO] Booted worker with pid: 7
-----
-
-This is the application's stdout and stderr — captured by Podman and accessible without entering the container. The gunicorn startup messages confirm the web server is listening on port 8000.
-
-Follow logs in real time:
-
-[source,bash,role=execute]
-----
-podman logs -f hostinfo
-----
-
-Make a request to the application in another tab or the browser. The access log entry appears. Press `Ctrl+C` to stop following.
 
 == Execute Commands in a Running Container
 
@@ -54,32 +28,108 @@ podman exec hostinfo cat /app/config.json
 }
 ----
 
-The two lists control what the application displays in its Web UI. `python_packages` are inspected via the Python package index inside the container; `system_packages` are looked up via the container's RPM database. This configuration is baked into the image — every new container starts with it.
+The two lists control what the application displays in its web UI. This configuration is baked into the image — every new container starts with it.
 
-Get an interactive shell to explore further:
+Get an interactive shell to explore the runtime environment:
 
 [source,bash,role=execute]
 ----
 podman exec -it hostinfo /bin/bash
 ----
 
-Unlike `podman run -it`, this shell is inside the already-running container — the same filesystem state, the same running application. Look at what the application is made of:
+Check what environment variables the container started with:
 
 [source,bash,role=execute]
 ----
-ls /app
+env
 ----
+
+Check the actual process command being run:
 
 [source,bash,role=execute]
 ----
-ls /app/venv/bin
+cat /proc/1/cmdline | tr '\0' ' '
 ----
 
-Exit:
+[source,text]
+----
+/app/venv/bin/python /app/venv/bin/gunicorn --bind 0.0.0.0:8000 app:app
+----
+
+Now try to list running processes:
+
+[source,bash,role=execute]
+----
+ps aux
+----
+
+[source,text]
+----
+bash: ps: command not found
+----
+
+`ps` is not in this image. Exit the shell:
 
 [source,bash,role=execute]
 ----
 exit
+----
+
+== Process View
+
+`podman top` shows the processes inside the container from outside — no `ps` required:
+
+[source,bash,role=execute]
+----
+podman top hostinfo
+----
+
+[source,text]
+----
+USER        PID   PPID  %CPU  ELAPSED   TTY   TIME  COMMAND
+root        1     0     0.00  3m21s     ?     0s    /app/venv/bin/python /app/venv/bin/gunicorn --bind 0.0.0.0:8000 app:app
+root        7     1     0.00  3m21s     ?     0s    /app/venv/bin/python /app/venv/bin/gunicorn --bind 0.0.0.0:8000 app:app
+----
+
+The gunicorn manager and worker process — the same view `ps` would give from inside, without needing `ps` to be installed.
+
+== Resource Usage
+
+[source,bash,role=execute]
+----
+podman stats hostinfo --no-stream
+----
+
+[source,text]
+----
+ID            NAME      CPU %   MEM USAGE / LIMIT   MEM %   NET IO        BLOCK IO  PIDS
+a1b2c3d4e5f6  hostinfo  0.12%   45.3MB / 3.8GB      1.19%   1.2kB / 890B  0B / 0B   3
+----
+
+A point-in-time snapshot of CPU, memory, network I/O, and block I/O. `--no-stream` prints once and exits; omit it to follow continuously.
+
+== Container Configuration
+
+`podman inspect` shows the full container configuration. Scope it to what's relevant rather than reading the full output:
+
+[source,bash,role=execute]
+----
+podman inspect hostinfo --format '{{.NetworkSettings.Ports}}'
+----
+
+[source,text]
+----
+map[8000/tcp:[{0.0.0.0 8000}]]
+----
+
+[source,bash,role=execute]
+----
+podman inspect hostinfo --format '{{.Config.Image}}'
+----
+
+[source,text]
+----
+registry-xxx.example.com/hostinfo-app:latest
 ----
 
 [source,bash,role=execute]
@@ -87,6 +137,6 @@ exit
 podman ps
 ----
 
-The container is still running. `exec` did not affect its lifecycle.
+The container is still running. None of these tools affected its lifecycle.
 
 In the next module you'll replace the default `config.json` with a custom one injected from the host.

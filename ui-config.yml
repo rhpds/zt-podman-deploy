@@ -12,8 +12,10 @@ antora:
     - name: "module-03"
       label: "Configuration"
       solveButton: true
+    - name: "module-04"
+      label: "Host View"
+      solveButton: true
 
 tabs:
   - name: "Terminal"
     url: /wetty
-    secondary_url: /wetty

@@ -1,10 +1,6 @@
 = Configuring the Application
 
-The container's default configuration is baked into the image — the same `config.json` on every run. Configuration that varies by environment or deployment needs to come from outside the isolation boundary. Volume mounts, environment variables, and targeted host path mounts are the mechanisms for doing that deliberately and safely.
-
-== The Starting Point
-
-In the previous module you read the default `config.json` with `podman exec` — two lists that control what the application displays. That file ships with the image and resets every time a new container starts. To change the application's behavior without rebuilding the image, the configuration needs to come from the host.
+Open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] and look at the container view. The package lists shown are the defaults baked into the image — the same on every new container. The goal of this module is to replace that configuration from the host without modifying or rebuilding the image.
 
 == Create a Custom Configuration
 
@@ -12,8 +8,6 @@ In the previous module you read the default `config.json` with `podman exec` —
 ----
 mkdir -p ~/hostinfo-config
 ----
-
-Create a modified config with a shorter package list:
 
 [source,bash,role=execute]
 ----
@@ -27,12 +21,16 @@ EOF
 
 == Inject Configuration with a Volume Mount
 
-Remove the existing container and start a new one with the configuration mounted from the host. First, without any SELinux options:
+Files in your home directory carry the SELinux label `user_home_t`. Container processes are not permitted to read that label by default — mounting the file without addressing this will produce a permission denied error even though the path is correct.
+
+Remove the existing container and start a new one with the file mounted:
 
 [source,bash,role=execute]
 ----
 podman rm -f hostinfo
 ----
+
+`podman rm -f` force-stops and removes the container in one step. Use it when you need a clean restart and the running state doesn't need to be preserved gracefully. You'll see a better approach for iterative changes in a moment.
 
 [source,bash,role=execute]
 ----
@@ -41,7 +39,7 @@ podman run -d -p 8000:8000 --name hostinfo \
   ${REGISTRY}/hostinfo-app
 ----
 
-Check whether the container can read it:
+The container starts, but cannot read the file. Confirm what it sees:
 
 [source,bash,role=execute]
 ----
@@ -53,11 +51,9 @@ podman exec hostinfo cat /app/config.json
 Permission denied
 ----
 
-The file exists on the host and the path is correct, but SELinux denies the container access. Files in your home directory carry the user's SELinux context — not a context the container runtime is permitted to read.
-
 == SELinux Context
 
-Check the current label on the file:
+Check the label on the file:
 
 [source,bash,role=execute]
 ----
@@ -69,19 +65,41 @@ ls -Z ~/hostinfo-config/config.json
 unconfined_u:object_r:user_home_t:s0 /home/rhel/hostinfo-config/config.json
 ----
 
-The `user_home_t` type is not accessible to container processes. The `:z` volume option relabels the file with a type the container runtime can read:
+The `user_home_t` type confirms the error. The `:z` volume option relabels the file to `container_file_t`, a type container processes are permitted to read.
+
+This relabeling is appropriate for `config.json` because it exists solely to support this container — it belongs to the container's configuration. The question is not where the file lives but who owns it: files created for the container's use can be relabeled; host system files being borrowed should not be. You'll see that distinction applied in the next module.
 
 [source,bash,role=execute]
 ----
-podman rm -f hostinfo
-----
-
-[source,bash,role=execute]
-----
-podman run -d -p 8000:8000 --name hostinfo \
+podman run --replace -d -p 8000:8000 --name hostinfo \
   -v ~/hostinfo-config/config.json:/app/config.json:ro,z \
   ${REGISTRY}/hostinfo-app
 ----
+
+`--replace` stops and removes the existing container atomically before starting the new one. For iterative changes this is cleaner than `rm -f` followed by `run` — the transition is a single operation, and if `podman logs -f` is running the log stream may survive the replacement rather than breaking between two commands.
+
+NOTE: Verify whether `podman logs -f` maintains stream continuity across `--replace` before relying on this behavior.
+
+== Verify the Change
+
+Check the logs to confirm the application restarted and loaded:
+
+[source,bash,role=execute]
+----
+podman logs hostinfo
+----
+
+[source,text]
+----
+[2026-08-17 19:31:04 +0000] [1] [INFO] Starting gunicorn 21.2.0
+[2026-08-17 19:31:04 +0000] [1] [INFO] Listening at: http://0.0.0.0:8000 (1)
+[2026-08-17 19:31:04 +0000] [1] [INFO] Worker booted
+[2026-08-17 19:31:04 +0000] [7] [INFO] Booted worker with pid: 7
+----
+
+Open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] — the package list in the container view reflects the custom configuration.
+
+// TODO: image::web-tab-hostinfo-custom-config.png[hostinfo-app showing custom package list]
 
 [source,bash,role=execute]
 ----
@@ -93,79 +111,6 @@ ls -Z ~/hostinfo-config/config.json
 system_u:object_r:container_file_t:s0 /home/rhel/hostinfo-config/config.json
 ----
 
-The label is now `container_file_t` — a type container processes are permitted to read. Verify the container sees the custom configuration:
+The label is now `container_file_t`. The file was relabeled when the volume was mounted with `:z`.
 
-[source,bash,role=execute]
-----
-podman exec hostinfo cat /app/config.json
-----
-
-Open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] — the package list reflects what you defined.
-
-// TODO: image::web-tab-hostinfo-custom-config.png[hostinfo-app showing custom package list]
-
-* `:z` — relabel for shared access: multiple containers can read this file
-* `:Z` — relabel for exclusive access: only this container; do not use on system files shared across the host
-
-== Environment Variables
-
-Some configuration is a value, not a file. Environment variables cross the isolation boundary without requiring filesystem access:
-
-[source,bash,role=execute]
-----
-podman rm -f hostinfo
-----
-
-[source,bash,role=execute]
-----
-podman run -d -p 8000:8000 --name hostinfo \
-  -v ~/hostinfo-config/config.json:/app/config.json:ro,z \
-  -e HOST_HOSTNAME=$(hostname) \
-  ${REGISTRY}/hostinfo-app
-----
-
-Confirm the value arrived inside the container:
-
-[source,bash,role=execute]
-----
-podman exec hostinfo env | grep HOST
-----
-
-[source,text]
-----
-HOST_HOSTNAME=rhel
-----
-
-The host's hostname is now visible to the application as an environment variable. The container received it at startup — no filesystem path required.
-
-== Host Path Mounts
-
-The application's Host View tab is empty by default. It needs access to specific host system paths to show host OS and package information. Mount them read-only:
-
-[source,bash,role=execute]
-----
-podman rm -f hostinfo
-----
-
-[source,bash,role=execute]
-----
-podman run -d -p 8000:8000 --name hostinfo \
-  -v ~/hostinfo-config/config.json:/app/config.json:ro,z \
-  -e HOST_HOSTNAME=$(hostname) \
-  -v /usr/lib/os-release:/host/os-release:ro,z \
-  -v /var/lib/rpm:/host/var/lib/rpm:ro,z \
-  ${REGISTRY}/hostinfo-app
-----
-
-Each `-v` is a deliberate, targeted exposure: a specific path, read-only, SELinux labeled. The container cannot reach anything else on the host filesystem.
-
-Verify the container sees the host paths:
-
-[source,bash,role=execute]
-----
-podman exec hostinfo ls /host
-----
-
-Open http://hostinfo-{guid}.{domain}[*the hostinfo application*^]. The Host View tab now shows the host OS and package information alongside the container's own view — the same kernel, different OS layers. The container is still isolated from the host, but you've chosen exactly which host resources cross that boundary and how.
-
-// TODO: image::web-tab-hostinfo-host-view.png[hostinfo-app Host View tab showing host OS information]
+In the next module you'll enable the host view by providing the host resources the application needs to populate it.
