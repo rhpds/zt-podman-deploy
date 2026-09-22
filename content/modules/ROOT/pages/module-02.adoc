@@ -77,12 +77,12 @@ Based on how an application behaves when sent a signal, dealing with STDIN/STDOU
 
 [source,bash,role=execute]
 ----
-cat /proc/1/cmdline | tr '\0' ' '
+cat /proc/1/cmdline | tr '\0' ' '; echo
 ----
 
 [source,text]
 ----
-/app/venv/bin/python /app/venv/bin/gunicorn --bind 0.0.0.0:8000 app:app
+/app/venv/bin/python3 /app/venv/bin/gunicorn --workers 2 --bind 0.0.0.0:8000 app:app
 ----
 
 Exit the shell:
