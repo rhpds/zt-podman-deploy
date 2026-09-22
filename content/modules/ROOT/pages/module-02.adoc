@@ -1,8 +1,11 @@
 = Observing the Application
 
-These tools let you see what a running container is doing without disrupting it. Containers include only what the application needs — common diagnostic tools like `ps` may not be present inside. Podman provides equivalents from outside the container boundary.
+Running an application is part of the battle, but troubleshooting is the other.
+The isolation that makes containers great, also means new tools to understand what's happening inside.
 
 == Start the Application
+
+Use the same command to start a new container with the same name.
 
 [source,bash,role=execute]
 ----
@@ -11,7 +14,10 @@ podman run -d -p 8000:8000 --name hostinfo ${REGISTRY}/hostinfo-app
 
 == Execute Commands in a Running Container
 
-`podman exec` runs a command inside an already-running container. The container keeps running — you are not starting a new one.
+One of the most common troubleshooting tools is `podman exec`.
+`podman exec` runs a command inside an already-running container. 
+The container keeps running — you are not starting a new one.
+The only limitation is whether or not the binary you call is in the image.
 
 Read the application's current configuration:
 
@@ -28,32 +34,26 @@ podman exec hostinfo cat /app/config.json
 }
 ----
 
-The two lists control what the application displays in its web UI. This configuration is baked into the image — every new container starts with it.
+The two lists control what the application displays in the UI. This configuration is baked into the image — every new container starts with it.
 
-Get an interactive shell to explore the runtime environment:
+Dumping file contents with `cat` is fine, but an interactive shell can be a much easier way to troubleshoot.
 
 [source,bash,role=execute]
 ----
 podman exec -it hostinfo /bin/bash
 ----
 
+The flags `-it` are a common pair when running commands with `exec` against a container to deal with I/O oddities and are key to getting a working shell.
+
+* `-i` interactive STDIN
+* `-t` allocate a TTY
+
+You have access to all of the binaries in the image according to the $PATH just like any other environment.
 Check what environment variables the container started with:
 
 [source,bash,role=execute]
 ----
 env
-----
-
-Check the actual process command being run:
-
-[source,bash,role=execute]
-----
-cat /proc/1/cmdline | tr '\0' ' '
-----
-
-[source,text]
-----
-/app/venv/bin/python /app/venv/bin/gunicorn --bind 0.0.0.0:8000 app:app
 ----
 
 Now try to list running processes:
@@ -68,7 +68,24 @@ ps aux
 bash: ps: command not found
 ----
 
-`ps` is not in this image. Exit the shell:
+`ps` is not in this image. 
+
+There are other ways to get the actual process command being run, like the `cmdline` section of the `/proc` filesystem for PID 1.
+Depending on how the container is built, the `CMD` will likely define what is PID 1.
+In many cases it's the application itself, but it's also common to see an `init` system of some kind like `systemd`, `runit` or some other process.
+Based on how an application behaves when sent a signal, dealing with STDIN/STDOUT/STDERR, child processes, etc, the use of an init system is an architecture choice of the image author.
+
+[source,bash,role=execute]
+----
+cat /proc/1/cmdline | tr '\0' ' '
+----
+
+[source,text]
+----
+/app/venv/bin/python /app/venv/bin/gunicorn --bind 0.0.0.0:8000 app:app
+----
+
+Exit the shell:
 
 [source,bash,role=execute]
 ----
@@ -77,7 +94,10 @@ exit
 
 == Process View
 
-`podman top` shows the processes inside the container from outside — no `ps` required:
+Getting inside a container isn't the only way to see what's happening.
+There are `podman` tools available that will show you what's going on.
+
+Even though `ps` wasn't included in the image, `podman top` shows the processes inside the container from outside — no `ps` required:
 
 [source,bash,role=execute]
 ----
@@ -91,9 +111,12 @@ root        1     0     0.00  3m21s     ?     0s    /app/venv/bin/python /app/ve
 root        7     1     0.00  3m21s     ?     0s    /app/venv/bin/python /app/venv/bin/gunicorn --bind 0.0.0.0:8000 app:app
 ----
 
-The gunicorn manager and worker process — the same view `ps` would give from inside, without needing `ps` to be installed.
+Notice that the "point of view" of things like user and PID are from inside the container.
+This isn't actually running as `PID 1` on the host, but from the container perspective, there's nothing else in the process table above the `gunicorn` application.
 
 == Resource Usage
+
+You can also get resource views for a container with `podman stats`.
 
 [source,bash,role=execute]
 ----
@@ -106,11 +129,16 @@ ID            NAME      CPU %   MEM USAGE / LIMIT   MEM %   NET IO        BLOCK 
 a1b2c3d4e5f6  hostinfo  0.12%   45.3MB / 3.8GB      1.19%   1.2kB / 890B  0B / 0B   3
 ----
 
-A point-in-time snapshot of CPU, memory, network I/O, and block I/O. `--no-stream` prints once and exits; omit it to follow continuously.
+The `--no-stream` option prints a point-in-time snapshot of CPU, memory, network I/O, and block I/O. 
+If you omit that option, it would print continuously.
+
 
 == Container Configuration
 
-`podman inspect` shows the full container configuration. Scope it to what's relevant rather than reading the full output:
+We used `podman inspect` earlier to get the port we needed to map, but it has a lot more information available.
+We also mentioned that the `--format` option can be used to specify JSON field directly.
+
+Let's use the format string to inspect the environment variables.
 
 [source,bash,role=execute]
 ----
@@ -123,6 +151,9 @@ podman inspect hostinfo --format '{{.Config.Env}}'
 ----
 
 The environment the container started with — only what the image defined. No custom variables have been injected yet.
+
+We can also get the name of the image the container started from.
+This can be useful if you are troubleshooting a running container you didn't start yourself.
 
 [source,bash,role=execute]
 ----
@@ -141,4 +172,5 @@ podman ps
 
 The container is still running. None of these tools affected its lifecycle.
 
-In the next module you'll replace the default `config.json` with a custom one injected from the host.
+We've connected a port to our container and done some inspection of the application inside.
+In the next exercise, we'll look at how to attach other kinds of resources to a container at runtime.

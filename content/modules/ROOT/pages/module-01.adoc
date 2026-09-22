@@ -1,10 +1,13 @@
 = Running the Application
 
-Containers are isolated by default — no network access from the host, no way to reach what's running inside. That isolation is intentional. Turning a container into a running service means making the first deliberate exception: publishing a port.
+Containers are isolated by default: no network access from the host, no file system access, a new and unique user.
+Turning a container into a running service means understanding the application resource requirements and connecting those from the host.
 
 == Pull the Image
 
-Pull `hostinfo-app` from the local registry:
+In the local lab registry, we have an application image we'll use to explore how to find the requirements and expose them appropriately.
+
+Pull the application image from the registry.
 
 [source,bash,role=execute]
 ----
@@ -13,7 +16,9 @@ podman pull ${REGISTRY}/hostinfo-app
 
 == Confirm the Port
 
-Before running the application, confirm what port the image expects to be reached on:
+Before running the application, you can examine the metadata of an image to understand what it does and how it was intended to run.
+
+You can either use the `--format` option to pull out JSON fields, or just use `grep` to find things in the JSON output of `podman inspect`.
 
 [source,bash,role=execute]
 ----
@@ -27,7 +32,9 @@ podman inspect ${REGISTRY}/hostinfo-app | grep -A2 ExposedPorts
         },
 ----
 
-The image declares port 8000. Without explicitly publishing it, that declaration is inert — the container runs but nothing on the host can reach it.
+The metadata tells us the image creator has decided that port 8000 is where the application is listening and what should be *exposed*. 
+This is more documentation than an actual directive.
+To connect the port inside the container the application is using to a port on the host we can actually reach, we need to *publish* that via the `podman run` command.
 
 == Run the Application
 
@@ -42,6 +49,8 @@ The flags:
 * `-p 8000:8000` — publish port, format: `host_port:container_port`
 * `--name hostinfo` — assign a name for service management
 
+NOTE: using this format with `-p` allows you to pick the host port, useful for service creation, but you can also use `-P` to assign a random ephemeral port.
+
 [source,bash,role=execute]
 ----
 podman ps
@@ -53,24 +62,30 @@ CONTAINER ID  IMAGE                              COMMAND               CREATED  
 a1b2c3d4e5f6  registry-xxx.example.com/hostinfo-app:latest  /app/venv/bin/gu...  3 seconds ago  Up 3 seconds  0.0.0.0:8000->8000/tcp  hostinfo
 ----
 
-The PORTS column shows `0.0.0.0:8000->8000/tcp`. Traffic arriving on the host at port 8000 is forwarded into the container's port 8000 — through the isolation boundary you just opened.
+The PORTS column shows `0.0.0.0:8000->8000/tcp`. 
+Traffic arriving on the host at port 8000 is forwarded into the container's port 8000 — through the isolation boundary you just opened.
 
-== Access the Application
-
-Confirm the application is serving from the command line:
+You can also see this mapping directly with `podman port`.
 
 [source,bash,role=execute]
 ----
-curl localhost:8000
+podman port hostinfo
 ----
 
-The response is the application's HTML output — the service is live and reachable on the published port.
+== Access the Application
 
-Open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] in your browser. It shows the container's hostname (the container ID), the container OS, and the Python packages from its default configuration.
+Confirm the application is serving from the command line
+
+[source,bash,role=execute]
+----
+curl -s -o /dev/null -w "%{http_code}\n" localhost:8000
+----
+
+We've got proof of connectivity, so open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] in your browser. 
+This application shows information about what it's running on, including the container's hostname (the container ID), the container OS, and the Python packages from its default configuration.
 
 // TODO: image::web-tab-hostinfo-default.png[hostinfo-app running with default configuration]
 
-The PORTS column in `podman ps` already confirmed the mapping is in place — the browser confirms the application is actually serving through it.
 
 == Container Lifecycle
 
@@ -104,7 +119,9 @@ podman start hostinfo
 podman ps
 ----
 
-Back up. `podman start` restarts the existing container with the same settings — same name, same port mapping, same image. This is different from `podman run`, which creates a new container each time.
+`podman start` restarts the existing container with the same settings — same name, same port mapping, same image. 
+If you need to change a setting like the published port, you'd need to use `podman run` again or experiment with `podman create`.
+`podman create` does the same sort of thing as `run`, but doesn't actually start the container immediately.
 
 == Remove the Container
 
@@ -131,4 +148,4 @@ podman rm hostinfo
 podman ps -a
 ----
 
-Gone. In the next module you'll run the application again and use Podman's tools to observe what it's doing.
+Now that you've seen the basics of container operation and how to attach host resources to run an application, we'll build on that in the next exercises.
