@@ -16,10 +16,9 @@ podman run -d -p 8000:8000 --name hostinfo ${REGISTRY}/hostinfo-app
 
 One of the most common troubleshooting tools is `podman exec`.
 `podman exec` runs a command inside an already-running container. 
-The container keeps running — you are not starting a new one.
 The only limitation is whether or not the binary you call is in the image.
 
-Read the application's current configuration:
+For example, you can read the application's current configuration file.
 
 [source,bash,role=execute]
 ----
@@ -34,7 +33,7 @@ podman exec hostinfo cat /app/config.json
 }
 ----
 
-The two lists control what the application displays in the UI. This configuration is baked into the image — every new container starts with it.
+The two lists control what the application displays in the UI. This configuration is baked into the image so every new container starts with it.
 
 Dumping file contents with `cat` is fine, but an interactive shell can be a much easier way to troubleshoot.
 
@@ -68,9 +67,10 @@ ps aux
 bash: ps: command not found
 ----
 
-`ps` is not in this image. 
+This is the downside of attempting interactive shell based troubleshooting, `ps` is not in this image. 
+The tools need to be shipped inside the image in order for you to use them, pretty straightforward but hard to tell without knowing more about the image.
 
-There are other ways to get the actual process command being run, like the `cmdline` section of the `/proc` filesystem for PID 1.
+But there are other ways to get the actual process command being run, like the `cmdline` section of the `/proc` filesystem for PID 1.
 Depending on how the container is built, the `CMD` will likely define what is PID 1.
 In many cases it's the application itself, but it's also common to see an `init` system of some kind like `systemd`, `runit` or some other process.
 Based on how an application behaves when sent a signal, dealing with STDIN/STDOUT/STDERR, child processes, etc, the use of an init system is an architecture choice of the image author.
@@ -85,7 +85,7 @@ cat /proc/1/cmdline | tr '\0' ' '; echo
 /app/venv/bin/python3 /app/venv/bin/gunicorn --workers 2 --bind 0.0.0.0:8000 app:app
 ----
 
-Exit the shell:
+Shell troubleshooting can be similar to the experience you'd have on the host, but can also have some strong limits.
 
 [source,bash,role=execute]
 ----
@@ -112,7 +112,7 @@ root        7     1     0.00  3m21s     ?     0s    /app/venv/bin/python /app/ve
 ----
 
 Notice that the "point of view" of things like user and PID are from inside the container.
-This isn't actually running as `PID 1` on the host, but from the container perspective, there's nothing else in the process table above the `gunicorn` application.
+This isn't actually running as `root` or `PID 1` on the host, but from the container perspective, there's nothing else in the process table above the `gunicorn` application.
 
 == Resource Usage
 
@@ -130,12 +130,12 @@ a1b2c3d4e5f6  hostinfo  0.12%   45.3MB / 3.8GB      1.19%   1.2kB / 890B  0B / 0
 ----
 
 The `--no-stream` option prints a point-in-time snapshot of CPU, memory, network I/O, and block I/O. 
-If you omit that option, it would print continuously.
+If you omit that option, it will print continuously.
 
 
 == Container Configuration
 
-We used `podman inspect` earlier to get the port we needed to map, but it has a lot more information available.
+We used `podman inspect` earlier to get the port we needed to map, but there's a lot more information available.
 We also mentioned that the `--format` option can be used to specify JSON field directly.
 
 Let's use the format string to inspect the environment variables.
@@ -150,7 +150,7 @@ podman inspect hostinfo --format '{{.Config.Env}}'
 [PATH=/app/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin]
 ----
 
-The environment the container started with — only what the image defined. No custom variables have been injected yet.
+The only environment variable declared at build time was the `PATH` to make starting the app easier.
 
 We can also get the name of the image the container started from.
 This can be useful if you are troubleshooting a running container you didn't start yourself.
