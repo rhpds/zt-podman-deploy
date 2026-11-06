@@ -76,21 +76,22 @@ podman logs hostinfo
 
 [source,text]
 ----
-[2026-08-17 19:31:04 +0000] [1] [INFO] Starting gunicorn 21.2.0
-[2026-08-17 19:31:04 +0000] [1] [INFO] Listening at: http://0.0.0.0:8000 (1)
-[2026-08-17 19:31:04 +0000] [1] [INFO] Worker booted
-[2026-08-17 19:31:04 +0000] [7] [INFO] Booted worker with pid: 7
+[2026-11-06 16:08:15,196] ERROR in app: Exception on /data [GET]
+....
+PermissionError: [Errno 13] Permission denied: '/app/config.json'
 ----
-The container starts, but cannot read the file. Confirm what it sees:
+Well that's pretty ugly python trace, but at the end we see a permissions issue on the new config file.
+So the volume is there, but something is wrong.
+Let's check via the shell.
 
 [source,bash,role=execute]
 ----
-podman exec hostinfo cat /app/config.json
+podman exec hostinfo ls -al /app/config.json
 ----
 
 [source,text]
 ----
-Permission denied
+ls: cannot access '/app/config.json': Permission denied
 ----
 
 Diagnosing a permission denied error like this normally involves checking permissions along the path, the audit log and more. 

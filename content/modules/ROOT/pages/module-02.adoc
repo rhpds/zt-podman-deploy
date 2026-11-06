@@ -28,8 +28,23 @@ podman exec hostinfo cat /app/config.json
 [source,text]
 ----
 {
-  "python_packages": ["flask", "gunicorn", "requests", "psutil"],
-  "system_packages": ["glibc", "openssl", "python3"]
+  "python_packages": [
+    "Flask",
+    "gunicorn",
+    "distro",
+    "pip",
+    "non_existent_python_package"
+  ],
+  "system_packages": [
+    "bash",
+    "openssl",
+    "curl",
+    "git",
+    "docker",
+    "nginx",
+    "apache2",
+    "non_existent_system_package"
+  ]
 }
 ----
 
@@ -147,10 +162,10 @@ podman inspect hostinfo --format '{{.Config.Env}}'
 
 [source,text]
 ----
-[PATH=/app/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin]
+[PATH=/app/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin container=podman CONTAINER_DEFAULT_USER=65532 PYTHON_VERSION=3.11.16 PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 HOME=/tmp HOSTNAME=fa0362dd533b]
 ----
 
-The only environment variable declared at build time was the `PATH` to make starting the app easier.
+You can see the build time change to the `PATH` to make starting the app easier along with a few other variables.
 
 We can also get the name of the image the container started from.
 This can be useful if you are troubleshooting a running container you didn't start yourself.

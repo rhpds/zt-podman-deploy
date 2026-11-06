@@ -74,6 +74,9 @@ You can also see this mapping directly with `podman port`.
 ----
 podman port hostinfo
 ----
+....
+8000/tcp -> 0.0.0.0:8000
+....
 
 == Access the Application
 
@@ -85,6 +88,9 @@ curl -s -o /dev/null -w "%{http_code}\n" localhost:8000
 ----
 
 We've got proof of connectivity, so open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] in your browser. 
+
+image::hostinfo.png[Host details viewer application showing container information]
+
 This application shows information about what it's running on, including the container's hostname (the container ID), the container OS, and the Python packages from its default configuration.
 
 // TODO: image::web-tab-hostinfo-default.png[hostinfo-app running with default configuration]
