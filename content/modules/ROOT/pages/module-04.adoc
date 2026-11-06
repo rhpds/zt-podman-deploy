@@ -89,7 +89,7 @@ The host view shows only what you chose to make available: the hostname, OS, and
 
 == What's next?
 
-This sample application shows how real services like `httpd` or `mysql` can be run containerzied and behave as expected when installed as packages.
+This sample application shows how real services like `httpd` or `mysql` can be run containerized and behave as expected when installed as packages.
 Containers are isolated by default from the host, but that can be carefully and strategically changed to connect to networks, access persistent storage, and more.
 
 Here we ran these containers by hand to get familiar with how `podman` behavior changes.

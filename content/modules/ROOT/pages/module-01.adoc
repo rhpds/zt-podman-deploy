@@ -8,7 +8,7 @@ Turning a container into a useful service means understanding the application re
 
 In the local lab registry, we have an application image we'll use to explore how to find the requirements and expose them appropriately.
 
-NOTE: The hostname of the local registry has been stored in an environment variable for convinience throughout this lab
+NOTE: The hostname of the local registry has been stored in an environment variable for convenience throughout this lab
 
 [source,bash,role=execute]
 ----
