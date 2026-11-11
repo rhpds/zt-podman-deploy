@@ -2,7 +2,7 @@
 site:
   title: "Deploying containers using Container Tools [podman]"
   url: https://github.com/rhpds/showroom_template_zero
-  start_page: modules::01-introduction.adoc
+  start_page: modules::module-01.adoc
 
 content:
   sources:
