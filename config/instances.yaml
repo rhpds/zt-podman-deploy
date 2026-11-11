@@ -11,9 +11,6 @@ virtualmachines:
         value: "bastions"
     networks:
       - default
-    packages:
-      - container-tools
-      - skopeo
     services:
       - name: registry-http
         ports:
