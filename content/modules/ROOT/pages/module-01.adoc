@@ -1,0 +1,161 @@
+= Running an Application
+
+By default, containers are isolated processes from the rest of the host.
+They get their own private network, file system, process table, and user.
+Turning a container into a useful service means understanding the application requirements and providing access to them from the host.
+
+== Pull the Image
+
+In the local lab registry, we have an application image we'll use to explore how to find the requirements and expose them appropriately.
+
+NOTE: The hostname of the local registry has been stored in an environment variable for convenience throughout this lab
+
+[source,bash,role=execute]
+----
+podman pull ${REGISTRY}/hostinfo-app
+----
+
+== Confirm the Port
+
+Before running an application, you can examine the metadata of an image to understand what it does and how it was intended to run.
+
+You can either use the `--format` option to pull out JSON fields, or just use `grep` to find things in the JSON output of `podman inspect`.
+Here we're looking for the ports the application declared it needed at build time.
+
+[source,bash,role=execute]
+----
+podman inspect ${REGISTRY}/hostinfo-app | grep -A2 ExposedPorts
+----
+
+[source,text]
+----
+        "ExposedPorts": {
+            "8000/tcp": {}
+        },
+----
+
+The metadata tells us the image creator has decided that port 8000 is where the application is listening and what should be *exposed*. 
+This is more documentation than an actual directive.
+To connect the port inside the container the application is using to a port on the host we can actually reach, we need to *publish* that via the `podman run` command.
+
+== Run the Application
+
+[source,bash,role=execute]
+----
+podman run -d -p 8000:8000 --name hostinfo ${REGISTRY}/hostinfo-app
+----
+
+The flags:
+
+* `-d` — detached: run in the background
+* `-p 8000:8000` — publish port, format: `host_port:container_port`
+* `--name hostinfo` — assign a persistent name to the container
+
+NOTE: using this format with `-p` allows you to pick the host port, useful for service creation, but you can also use `-P` to assign a random ephemeral port.
+
+You can examine some of the details about a running container, including the port mapping and command executed as well as the assigned name, using `podman ps`.
+[source,bash,role=execute]
+----
+podman ps
+----
+
+[source,text]
+----
+CONTAINER ID  IMAGE                              COMMAND               CREATED        STATUS        PORTS                   NAMES
+a1b2c3d4e5f6  registry-xxx.example.com/hostinfo-app:latest  /app/venv/bin/gu...  3 seconds ago  Up 3 seconds  0.0.0.0:8000->8000/tcp  hostinfo
+----
+
+The PORTS column shows `0.0.0.0:8000->8000/tcp`. 
+Traffic arriving on the host at port 8000 is forwarded into the container's port 8000.
+
+You can also see this mapping directly with `podman port`.
+
+[source,bash,role=execute]
+----
+podman port hostinfo
+----
+....
+8000/tcp -> 0.0.0.0:8000
+....
+
+== Access the Application
+
+Confirm the application is serving from the command line
+
+[source,bash,role=execute]
+----
+curl -s -o /dev/null -w "%{http_code}\n" localhost:8000
+----
+
+We've got proof of connectivity, so open http://hostinfo-{guid}.{domain}[*the hostinfo application*^] in your browser. 
+
+image::hostinfo.png[Host details viewer application showing container information]
+
+This application shows information about what it's running on, including the container's hostname (the container ID), the container OS, and the Python packages from its default configuration.
+
+// TODO: image::web-tab-hostinfo-default.png[hostinfo-app running with default configuration]
+
+
+== Container Lifecycle
+
+This container is running a service, not a one-off task. You can stop and restart it without removing it by referring to the name assigned.
+
+[source,bash,role=execute]
+----
+podman stop hostinfo
+----
+
+[source,bash,role=execute]
+----
+podman ps -a
+----
+[source,text]
+----
+CONTAINER ID  IMAGE                              COMMAND               CREATED         STATUS                    PORTS  NAMES
+a1b2c3d4e5f6  registry-xxx.example.com/hostinfo-app:latest  /app/venv/bin/gu...  2 minutes ago  Exited (0) 5 seconds ago         hostinfo
+----
+
+Status is `Exited`. The container and its configuration are preserved — just not running.
+
+[source,bash,role=execute]
+----
+podman start hostinfo
+----
+
+[source,bash,role=execute]
+----
+podman ps
+----
+
+`podman start` restarts the *existing* container with the same settings — same name, same port mapping, same image. 
+Using `run` to define a container creates a persistent object separate from the origin image.
+If you need to change a setting like the published port, you'd need to use `podman run` again or experiment with `podman create`.
+`podman create` does the same sort of thing as `run`, but doesn't actually start the container immediately.
+
+== Remove the Container
+
+[source,bash,role=execute]
+----
+podman rm hostinfo
+----
+
+[source,text]
+----
+Error: container state improper
+----
+
+You cannot remove a running container directly. Stop it first, then remove it:
+
+[source,bash,role=execute]
+----
+podman stop hostinfo
+podman rm hostinfo
+----
+
+You can now see, or not see, the `hostinfo` container in the `ps` output.
+[source,bash,role=execute]
+----
+podman ps -a
+----
+
+Now that you've seen the basics of container operation and how to attach host resources to run an application, we'll build on that in the next exercises.

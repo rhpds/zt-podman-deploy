@@ -1,0 +1,23 @@
+# lab-metadata.yml
+# Single Point of Truth for Lab Information
+
+lab:
+  name: "Deploying containers using Container Tools [podman]"
+  shortname: "zt-podman-deploy"
+  maintainer: "Matt Micene (mmicene@redhat.com)"
+
+  description:
+    summary: "Deploy and configure a containerized application using Podman"
+    goal: "Users leave this hands-on scenario able to take a container image and run it as a service: publishing ports, observing a running container, using volumes and environment variables, and understanding when and why SELinux volume relabeling is required."
+    concepts:
+      - "Publishing ports: expose vs publish"
+      - "Observing running containers"
+      - "Mounting volumes"
+      - "Passing configuration via environment variables"
+      - "Updating containers"
+    use_case: "Run a containerized application as a service and configure it for the host environment"
+    time_to_complete: "15"
+
+  git_ref:
+    production: "main"
+    development: "dev"
